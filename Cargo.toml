@@ -1,0 +1,12 @@
+[package]
+name = "segment-utils"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "time", "macros", "sync", "signal", "net", "io-util"] }
+segment-rs = "0.0.1-alpha.5"
+rustyline = "10.0.0"
+anyhow = "1.0.66"
