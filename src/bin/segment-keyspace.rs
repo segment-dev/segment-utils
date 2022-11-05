@@ -14,6 +14,12 @@ use std::path::Path;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    #[arg(short = 'H', long)]
+    host: Option<String>,
+
+    #[arg(short, long)]
+    port: Option<u16>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -26,10 +32,16 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let client = Client::new(ConnectionOptions::new("127.0.0.1", 1698));
+    let args = Args::parse();
+
+
+    let client = Client::new(ConnectionOptions::new(
+        &args.host.unwrap_or(String::from("127.0.0.1")),
+        args.port.unwrap_or(1698)
+    ));
     let mut conn = client.get_connection().await?;
 
-    let args = Args::parse();
+
     match &args.command {
         Commands::Export => {
             export_keyspaces(&mut conn).await;
