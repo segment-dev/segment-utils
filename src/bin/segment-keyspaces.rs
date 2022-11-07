@@ -14,11 +14,11 @@ use std::path::Path;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short = 'H', long)]
-    host: Option<String>,
+    #[arg(long, default_value = "127.0.0.1")]
+    host: String,
 
-    #[arg(short, long)]
-    port: Option<u16>,
+    #[arg(long, default_value = "1698")]
+    port: u16,
 
     #[command(subcommand)]
     command: Commands,
@@ -33,31 +33,25 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-
-
-    let client = Client::new(ConnectionOptions::new(
-        &args.host.unwrap_or(String::from("127.0.0.1")),
-        args.port.unwrap_or(1698)
-    ));
+    let client = Client::new(ConnectionOptions::new(&args.host, args.port));
     let mut conn = client.get_connection().await?;
-
 
     match &args.command {
         Commands::Export => {
             export_keyspaces(&mut conn).await;
         }
         Commands::Restore { filename } => {
-            restore_keyspaces(Path::new(filename), &mut conn).await;
+            restore_keyspaces(Path::new(filename), &mut conn).await?;
         }
     }
     Ok(())
 }
 
-async fn restore_keyspaces(file: &Path, conn: &mut Connection) {
-    let reader = BufReader::new(File::open(file).expect("Cannot open file"));
+async fn restore_keyspaces(file: &Path, conn: &mut Connection) -> Result<()> {
+    let reader = BufReader::new(File::open(file)?);
 
     for l in reader.lines() {
-        let line = l.expect("Error reading line");
+        let line = l?;
         if let Ok(tokens) = tokenizer::tokenize(line.clone()) {
             let mut cmd = Command::new();
             for token in tokens {
@@ -75,6 +69,7 @@ async fn restore_keyspaces(file: &Path, conn: &mut Connection) {
             println!("malformed input received")
         }
     }
+    Ok(())
 }
 
 async fn export_keyspaces(conn: &mut Connection) {
