@@ -11,9 +11,11 @@ use std::collections::HashMap;
 
 #[derive(Debug, Parser)]
 struct Args {
+    /// Segment server host
     #[arg(long, default_value = "127.0.0.1")]
     host: String,
 
+    /// Segment server port
     #[arg(long, default_value_t = 1698)]
     port: u16,
 }
