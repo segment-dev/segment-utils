@@ -1,4 +1,5 @@
 use anyhow::Result;
+use clap::Parser;
 use rustyline::{error::ReadlineError, Editor};
 use segment_rs::{
     client::Client,
@@ -6,15 +7,27 @@ use segment_rs::{
     connection::{Connection, ConnectionOptions},
 };
 use segment_utils::tokenizer;
+use std::collections::HashMap;
+
+#[derive(Debug, Parser)]
+struct Args {
+    #[arg(long, default_value = "127.0.0.1")]
+    host: String,
+
+    #[arg(long, default_value_t = 1698)]
+    port: u16,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let client = Client::new(ConnectionOptions::new("127.0.0.1", 1698));
+    let args = Args::parse();
+
+    let client = Client::new(ConnectionOptions::new(&args.host, args.port));
     let mut conn = client.get_connection().await?;
     let mut rl = Editor::<()>::new()?;
 
     loop {
-        let line = rl.readline(">> ");
+        let line = rl.readline(&format!("{}:{}> ", args.host, args.port));
         match line {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
@@ -86,38 +99,38 @@ async fn execute_command(tokens: Vec<String>, conn: &mut Connection) {
             Ok(val) => print_string_result(&val),
             Err(e) => print_error_result(e),
         },
-        "keyspaces" => match cmd.query::<Vec<String>>(conn).await {
+        "keyspaces" => match cmd.query::<Vec<HashMap<String, String>>>(conn).await {
             Ok(vec) => {
                 if vec.is_empty() {
                     println!("(empty list)");
                 }
                 for (i, val) in vec.iter().enumerate() {
                     print!("{}) ", i + 1);
-                    print_string_result(val)
+                    println!("{:?}", val);
                 }
             }
             Err(e) => print_error_result(e),
         },
-        _ => println!("unknown command \"{}\"", name),
+        _ => println!("(error) \"unknown command '{}'\"", name),
     };
 }
 
-pub fn print_boolean_result(val: bool) {
-    println!("(boolean) \"{}\"", val)
+fn print_boolean_result(val: bool) {
+    println!("(boolean) {}", val)
 }
 
-pub fn print_error_result(e: CommandError) {
-    println!("(error) \"{}\"", e)
+fn print_error_result(e: CommandError) {
+    println!("(error) {}", e)
 }
 
-pub fn print_string_result(val: &String) {
+fn print_string_result(val: &String) {
     println!("(string) \"{}\"", val)
 }
 
-pub fn print_null_result() {
+fn print_null_result() {
     println!("(null)")
 }
 
-pub fn print_integer_result(val: i64) {
-    println!("(integer) \"{}\"", val)
+fn print_integer_result(val: i64) {
+    println!("(integer) {}", val)
 }

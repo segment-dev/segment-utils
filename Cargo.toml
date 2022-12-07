@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "time", "macros", "sync", "signal", "net", "io-util"] }
-segment-rs = "0.0.1-alpha.5"
+segment-rs = "0.0.1-alpha.9"
 rustyline = "10.0.0"
 anyhow = "1.0.66"
+clap = { verison = "4.0.22", features = ["derive"] }
